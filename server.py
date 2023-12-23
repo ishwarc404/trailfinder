@@ -5,6 +5,8 @@ import server_support_get_trails
 import gpxpy
 import gpxpy.gpx
 import os
+from geopy.distance import geodesic
+
 
 app = Flask(__name__)
 CORS(app)
@@ -17,18 +19,25 @@ def get_trails():
     elevation_gain_minimum = int(request.json['elevation_gain_minimum'])
     elevation_gain_maximum = int(request.json['elevation_gain_maximum'])
 
+    elevation_loss_minimum = int(request.json['elevation_loss_minimum'])
+    elevation_loss_maximum = int(request.json['elevation_loss_maximum'])
+
     print(
         distance_minimum,
         distance_maximum,
         elevation_gain_minimum,
-        elevation_gain_maximum
+        elevation_gain_maximum,
+        elevation_loss_minimum,
+        elevation_loss_maximum
     )
 
     results = server_support_get_trails.get_trails(
         distance_minimum*1000, #converting to meters
         distance_maximum*1000,
         elevation_gain_minimum,
-        elevation_gain_maximum
+        elevation_gain_maximum,
+        elevation_loss_minimum,
+        elevation_loss_maximum
     )
 
     # with open("trail_search_results.json") as fp:
@@ -70,6 +79,55 @@ def get_gpx():
     os.remove(file_name)
 
     return response
+
+
+@app.route('/get-elevation-profile', methods=['POST'])
+def get_elevation_profile():
+    file = None
+    race = None
+    # Check if the post request has the file part
+    if 'file' in request.files:
+        file = request.files['file']
+    else:
+        race = request.json['race']
+
+    if file:
+        # Parse GPX file
+        gpx = gpxpy.parse(file)
+
+        parsed_gpx = []
+        total_distance = 0
+
+        for track in gpx.tracks:
+            for segment in track.segments:
+                for i in range(1, len(segment.points)):
+                    point1 = segment.points[i - 1]
+                    point2 = segment.points[i]
+                    distance = geodesic((point1.latitude, point1.longitude), (point2.latitude, point2.longitude)).meters
+                    total_distance += distance
+                    parsed_gpx.append({"distance": total_distance, "elevation": point2.elevation})
+
+        # Return the parsed GPX data
+        return {"data": parsed_gpx}
+    
+    if race:
+        gpx_file = open('{}.gpx'.format(race), 'r')
+        gpx = gpxpy.parse(gpx_file)
+        parsed_gpx = []
+        total_distance = 0
+        for track in gpx.tracks:
+            for segment in track.segments:
+                for i in range(1, len(segment.points)):
+                    point1 = segment.points[i - 1]
+                    point2 = segment.points[i]
+                    distance = geodesic((point1.latitude, point1.longitude), (point2.latitude, point2.longitude)).meters
+                    total_distance += distance
+                    parsed_gpx.append({"distance": total_distance, "elevation": point2.elevation})
+
+        # Return the parsed GPX data
+        return {"data": parsed_gpx}
+
+    return {"error": "File upload failed"}, 500
 
         
 if __name__ == '__main__':

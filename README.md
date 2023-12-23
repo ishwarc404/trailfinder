@@ -10,7 +10,7 @@
 
 4. `get_intersections.py` - SUPER IMPORTANT. - Go through all the ways, and finds intersections. Then breaks each way down into smaller trails. 
 
-
+5. `get_way_gradients.ipynb` - SUPER IMPORTANT - `way_metrics.json` is calculated here which contains metrics of the smaller broken ways
 ### Upcoming tasks
 
 1. Store new broken down ways, and build a new graph with all these ways. Remember to discard original ways, which were later broken down. 
