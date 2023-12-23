@@ -199,19 +199,20 @@ def get_trails(minimum_distance, maximum_distance, minimum_elevation_gain, maxim
     results = []
     for trail_set in all_trails:  # Assuming all_trails is a list of trails
         trail_coordinates = []
+        trail_distance = 0
+        trail_elevation_gain = 0
         for each_trail in trail_set:
             trail_coordinates.extend(new_ways[each_trail])  # Convert way IDs to coordinates
-
-
+            dist,ele = calculate_distance_elevation(each_trail)
+            trail_distance += dist
+            trail_elevation_gain += ele
         #printout info about that trail
-        # dist,ele = get_distance_elevation(trail_coordinates)
-        dist = 0
-        ele = 0
+        # trail_distance,trail_elevation_gain = get_distance_elevation(trail_coordinates)
         # geojson_polyline = coordinates_to_geojson(coordinates)
 
         coordinates.append(trail_coordinates)
         # polylines.append(geojson_polyline)
-        print("Trail Distance: {} Trail Elevation: {}".format(dist, ele))
+        print("Trail Distance: {} Trail Elevation: {}".format(trail_distance, trail_elevation_gain))
         count += 1
         reserved_coords = [] #to get long, lat format
         for each in trail_coordinates:
@@ -219,8 +220,8 @@ def get_trails(minimum_distance, maximum_distance, minimum_elevation_gain, maxim
         results.append(
             {
                 "id" : count, 
-                "distance": dist,
-                "elevation": ele,
+                "distance": trail_distance,
+                "elevation": trail_elevation_gain,
                 "coordinates": reserved_coords
             }
         )

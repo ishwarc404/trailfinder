@@ -1,7 +1,10 @@
-from flask import Flask, request
+from flask import Flask, request, send_file
 import json
 from flask_cors import CORS
 import server_support_get_trails
+import gpxpy
+import gpxpy.gpx
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -33,6 +36,41 @@ def get_trails():
 
     return json.dumps(results['data'])
 
+@app.route('/get-gpx', methods=['POST'])
+def get_gpx():
+    coordinates = request.json['coordinates']
 
+
+    gpx = gpxpy.gpx.GPX()
+
+    # # Create first track in our GPX:
+    gpx_track = gpxpy.gpx.GPXTrack()
+    gpx.tracks.append(gpx_track)
+
+    # # Create first segment in our GPX track:
+    gpx_segment = gpxpy.gpx.GPXTrackSegment()
+    gpx_track.segments.append(gpx_segment)
+
+    # # Create points:
+    for point in coordinates:
+        gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(point[1], point[0], elevation=0))
+
+    # Generate GPX file content
+    gpx_data = gpx.to_xml()
+
+    # Write to a temporary file
+    file_name = 'route_gpx_file.gpx'
+    with open(file_name, 'w') as f:
+        f.write(gpx_data)
+
+    # Return the file as a response
+    response = send_file(file_name, as_attachment=True)
+
+    # Optionally, delete the file after sending it
+    os.remove(file_name)
+
+    return response
+
+        
 if __name__ == '__main__':
     app.run(debug=True)
