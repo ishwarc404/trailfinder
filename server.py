@@ -5,6 +5,7 @@ import gpxpy
 import gpxpy.gpx
 import os
 from geopy.distance import geodesic
+from werkzeug.utils import secure_filename
 
 import server_support_get_trails
 import gpx_analysis
@@ -89,12 +90,17 @@ def get_elevation_profile():
     # Check if the post request has the file part
     if 'file' in request.files:
         file = request.files['file']
+
     else:
         race = request.json['race']
 
     if file:
         # Parse GPX file
         gpx = gpxpy.parse(file)
+
+        # new_file_path = os.path.join('./uploads/', new_filename)
+        with open('./user_files/{}'.format(file.filename), 'w') as new_gpx_file:
+            new_gpx_file.write(gpx.to_xml())
 
         parsed_gpx = []
         total_distance = 0
@@ -112,8 +118,9 @@ def get_elevation_profile():
         return {"data": parsed_gpx}
     
     if race:
-        gpx_file = open('{}.gpx'.format(race), 'r')
+        gpx_file = open('./official_files/{}.gpx'.format(race), 'r')
         gpx = gpxpy.parse(gpx_file)
+
         parsed_gpx = []
         total_distance = 0
         for track in gpx.tracks:
@@ -131,9 +138,17 @@ def get_elevation_profile():
     return {"error": "File upload failed"}, 500
 
 
-@app.route('/analyse-gpx', methods=['GET'])
+@app.route('/analyse-gpx', methods=['POST'])
 def analyse_gpx():
-    segments = gpx_analysis.analyse('hr100.gpx')
+    type_val = request.json['type']
+    if(type_val == 'race'):
+        filename = request.json['race']
+        segments = gpx_analysis.analyse('./official_files/{}.gpx'.format(filename))
+
+    if(type_val == 'file'):
+        filename = request.json['filename']
+        segments = gpx_analysis.analyse('./user_files/{}'.format(filename))
+
     results = []
     count = 0
 
