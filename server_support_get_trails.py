@@ -185,7 +185,7 @@ def get_trails(minimum_distance, maximum_distance, minimum_elevation_gain, maxim
 
         coordinates.append(trail_coordinates)
         # polylines.append(geojson_polyline)
-        print("Trail Distance: {} Trail Elevation: {}".format(trail_distance, trail_elevation_gain,trail_elevation_loss))
+        # print("Trail Distance: {} Trail Elevation: {}".format(trail_distance, trail_elevation_gain,trail_elevation_loss))
         count += 1
         reserved_coords = [] #to get long, lat format
         for each in trail_coordinates:

@@ -1,12 +1,13 @@
 from flask import Flask, request, send_file
 import json
 from flask_cors import CORS
-import server_support_get_trails
 import gpxpy
 import gpxpy.gpx
 import os
 from geopy.distance import geodesic
 
+import server_support_get_trails
+import gpx_analysis
 
 app = Flask(__name__)
 CORS(app)
@@ -129,6 +130,52 @@ def get_elevation_profile():
 
     return {"error": "File upload failed"}, 500
 
+
+@app.route('/analyse-gpx', methods=['GET'])
+def analyse_gpx():
+    segments = gpx_analysis.analyse('hr100.gpx')
+    results = []
+    count = 0
+
+    for each in segments:
+
+        if(each['type'] == 'climb'):
+            elevation_gain_minimum = each['elevation_change'] - 50
+            elevation_gain_maximum = each['elevation_change'] + 50
+            elevation_loss_minimum = -99999
+            elevation_loss_maximum = 999999
+
+        if(each['type'] == 'descent'):
+            elevation_loss_minimum = each['elevation_change'] - 50
+            elevation_loss_maximum = each['elevation_change'] + 50
+            elevation_gain_minimum = -99999
+            elevation_gain_maximum = 999999
         
+        if(each['type'] == 'flat'):
+            elevation_gain_minimum = -99999
+            elevation_gain_maximum = 99999
+            elevation_loss_minimum = -99999
+            elevation_loss_maximum = 999999
+
+        print("**************")
+        print(each)
+        trails =  server_support_get_trails.get_trails(
+        each['distance']-100, #adding a little range buffer
+        each['distance']+100,
+        elevation_gain_minimum,
+        elevation_gain_maximum,
+        elevation_loss_minimum,
+        elevation_loss_maximum
+        )['data']
+
+        each['trails'] = trails
+        count +=1
+        each['id'] = count
+        results.append(each)
+        print("**************")
+    
+    return json.dumps(results)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
