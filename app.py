@@ -13,6 +13,10 @@ import gpx_analysis
 app = Flask(__name__)
 CORS(app)
 
+@app.route('/', methods=['GET'])
+def get():
+    return "It works, buddy :)"
+
 @app.route('/get-trails', methods=['POST'])
 def get_trails():
     distance_minimum = int(request.json['distance_minimum'])
